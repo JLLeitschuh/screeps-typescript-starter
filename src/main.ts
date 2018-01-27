@@ -2,6 +2,9 @@ import {ErrorMapper} from "utils/ErrorMapper";
 import {RoleHarvester} from "./role.harvester";
 import {RoleUpgrader} from "./role.upgrader";
 import {RoleBuilder} from "./role.builder";
+import {RoleDropminer} from "./role.dropminer";
+import {Executive} from "./executive";
+import {Role} from "./role";
 
 declare global {
   interface CreepMemory {
@@ -12,9 +15,6 @@ declare global {
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  const baseRoom = Game.spawns['Spawn1'].room;
-  console.log(`Current game tick is ${Game.time}`);
-
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {
     if (!(name in Game.creeps)) {
@@ -22,25 +22,30 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  const harvesters = creepsByRole(Role.HARVESTER);
-  console.log('Harvesters: ' + harvesters.length);
-  if (harvesters.length < 3) {
-    spawnCreepOfType(Role.HARVESTER)
-  }
+  const source = Game.spawns['Spawn1'];
+  const baseRoom = source.room;
 
-  const upgraders = creepsByRole(Role.UPGRADER);
-  console.log('Upgraders: ' + upgraders.length);
-  if (upgraders.length < 2) {
-    spawnCreepOfType(Role.UPGRADER)
-  }
+  const towers = baseRoom.find(FIND_MY_STRUCTURES, {filter: s => s.structureType == STRUCTURE_TOWER}) as StructureTower[];
+  towers.forEach(tower => {
+    const closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
+    if (closestHostile) {
+      tower.attack(closestHostile);
+    } else {
+      const closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
+        filter: (structure) => structure.hits < structure.hitsMax
+      });
+      if (closestDamagedStructure) {
+        tower.repair(closestDamagedStructure);
+      }
+    }
+  });
 
-  const builders = creepsByRole(Role.BUILDER);
-  console.log('Builders: ' + upgraders.length);
-  if (builders.length < 4) {
-    spawnCreepOfType(Role.BUILDER)
-  }
+  const executive = Executive.from(baseRoom);
+
+  executive.spawnQueue();
 
   if (Game.spawns['Spawn1'].spawning) {
+    // Report what is being spawned.
     const spawningCreep = Game.creeps[Game.spawns['Spawn1'].spawning.name];
     Game.spawns['Spawn1'].room.visual.text(
       '🛠️' + spawningCreep.memory["role"],
@@ -60,41 +65,34 @@ export const loop = ErrorMapper.wrapLoop(() => {
     if (creep.memory["role"] == Role.BUILDER) {
       RoleBuilder.run(creep);
     }
+    if (creep.memory["role"] == Role.DROP_MINER) {
+      RoleDropminer.run(creep);
+    }
+    if (creep.memory["role"] == Role.GUARD) {
+      const hostileCreeps = baseRoom.find(FIND_HOSTILE_CREEPS);
+      if (hostileCreeps.length > 0) {
+        const targetsSorted = _.sortBy(hostileCreeps, target => creep.pos.getRangeTo(target));
+        if (creep.attack(targetsSorted[0]) == ERR_NOT_IN_RANGE) {
+          creep.moveTo(targetsSorted[0]);
+        }
+      } else {
+        // Get out of the way for more mining.
+        let position = baseRoom.getPositionAt(7, 19);
+        if (position != null) {
+          creep.moveTo(position);
+        }
+      }
+    }
   }
 
-  constructRoads();
-  const extensionConstructionLocation = baseRoom.getPositionAt(34, 36);
-  if (extensionConstructionLocation != null) {
-    constructExtensions5x5(extensionConstructionLocation);
-  }
-
+  // if (Game.time % 10 == 0) {
+  //   constructRoads();
+  //   const extensionConstructionLocation = baseRoom.getPositionAt(34, 36);
+  //   if (extensionConstructionLocation != null) {
+  //     constructExtensions5x5(extensionConstructionLocation);
+  //   }
+  // }
 });
-
-enum Role {
-  HARVESTER = "harvester",
-  UPGRADER = "upgrader",
-  BUILDER = "builder"
-}
-
-function creepsByRole(role: Role): Creep[] {
-  return _.filter(Game.creeps, (creep) => creep.memory["role"] == role);
-}
-
-function spawnCreepOfType(role: Role): void {
-  if (Game.spawns['Spawn1'].spawning) {
-    // Don't spawn another creep while one is being spawned.
-    return
-  }
-  const capitalizedRole = capitalizeFirstLetter(role);
-  const newName = capitalizedRole + String(Game.time);
-  console.log('Spawning new ' + role + ': ' + newName);
-  Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName,
-    {memory: {role: role}});
-}
-
-function capitalizeFirstLetter(string: String): String {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
 
 function constructRoads() {
   const spawn = Game.spawns["Spawn1"];
@@ -112,20 +110,20 @@ function constructRoads() {
 }
 
 
-function constructExtensions5x5(rootPosition: RoomPosition) {
-  const diagonals: { x: number, y: number }[] = [
-    {x: +1, y: +1},
-    {x: -1, y: -1},
-    {x: +1, y: -1},
-    {x: -1, y: +1}
-  ];
-  const positions = diagonals.map(diagonal => {
-    return new RoomPosition(
-      rootPosition.x + diagonal.x,
-      rootPosition.y + diagonal.y,
-      rootPosition.roomName);
-  }).concat(rootPosition);
-  positions.forEach(position => {
-    position.createConstructionSite(STRUCTURE_EXTENSION);
-  });
-}
+// function constructExtensions5x5(rootPosition: RoomPosition) {
+//   const diagonals: { x: number, y: number }[] = [
+//     {x: +1, y: +1},
+//     {x: -1, y: -1},
+//     {x: +1, y: -1},
+//     {x: -1, y: +1}
+//   ];
+//   const positions = diagonals.map(diagonal => {
+//     return new RoomPosition(
+//       rootPosition.x + diagonal.x,
+//       rootPosition.y + diagonal.y,
+//       rootPosition.roomName);
+//   }).concat(rootPosition);
+//   positions.forEach(position => {
+//     position.createConstructionSite(STRUCTURE_EXTENSION);
+//   });
+// }
