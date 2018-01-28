@@ -26,7 +26,7 @@ export class Executive {
 
     const dropMiners = CreepSupport.creepsByRole(Role.DROP_MINER);
 
-    if (dropMiners.length < this.elements.spawns.length) {
+    if (dropMiners.length < this.elements.sources.length) {
       // First priority, spawn dropminers
       this.spawnCreepOfType(Role.DROP_MINER);
     } else if (harvesters.length < 3) {
@@ -81,18 +81,22 @@ export class Executive {
    */
   private bodyFor(role: Role): BodyPartConstant[] {
     // TODO: Make this vary based upon the actually available resources.
-    if (this.room.energyAvailable == 300) {
-      if (role == Role.DROP_MINER) {
-        return [WORK, WORK, MOVE];
+    if (this.room.energyAvailable <= 300) {
+      // If we don't have the energy available, then we need to resort to making cheaper creeps.
+      switch(role) {
+        case Role.DROP_MINER:
+          return [WORK, WORK, MOVE]; // 250 Energy
+        case Role.GUARD:
+          return [ATTACK, ATTACK, MOVE];
+        default:
+          return [WORK, CARRY, MOVE];
       }
     }
     switch (role) {
       case Role.DROP_MINER:
         return [WORK, WORK, WORK, WORK, WORK, MOVE];
-      case Role.GUARD:
-        return [ATTACK, ATTACK, MOVE];
       default:
-        return [WORK, CARRY, MOVE];
+        return [WORK, WORK, CARRY, CARRY, MOVE, MOVE]; // 400 Energy
     }
   }
 
