@@ -2,9 +2,9 @@ import {CreepSupport} from "./creep.support";
 
 export class RoleHarvester {
   public static run(creep: Creep) {
-    if (creep.carry.energy < creep.carryCapacity) {
-      CreepSupport.collectEnergy(creep);
-    } else {
+    const isWorking = CreepSupport.workTransition(creep);
+
+    if (isWorking) {
       const targets = creep.room.find(FIND_STRUCTURES, {
         filter: (structure) => {
           return (structure.structureType == STRUCTURE_EXTENSION ||
@@ -18,6 +18,8 @@ export class RoleHarvester {
           creep.moveTo(targetsSorted[0], {visualizePathStyle: {stroke: '#ffffff'}});
         }
       }
+    } else {
+      CreepSupport.collectEnergy(creep);
     }
   }
 }

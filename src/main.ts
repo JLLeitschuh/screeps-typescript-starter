@@ -5,6 +5,7 @@ import {RoleBuilder} from "./role.builder";
 import {RoleDropminer} from "./role.dropminer";
 import {Executive} from "./executive";
 import {Role} from "./role";
+import {RoomElements} from "./room.elements";
 
 declare global {
   interface CreepMemory {

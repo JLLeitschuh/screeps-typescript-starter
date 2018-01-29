@@ -26,21 +26,26 @@ export class Executive {
 
     const dropMiners = CreepSupport.creepsByRole(Role.DROP_MINER);
 
+    const constructionSiteCount = this.elements.constructionSites.length;
+    const requiredBuilders = Math.ceil(constructionSiteCount / 2);
+
     if (dropMiners.length < this.elements.sources.length) {
       // First priority, spawn dropminers
       this.spawnCreepOfType(Role.DROP_MINER);
     } else if (harvesters.length < 3) {
       // Second priority, spawn haulers,
       this.spawnCreepOfType(Role.HARVESTER)
-    } else if (upgraders.length < 2) {
+    } else if (upgraders.length < 3) {
       // Third priority, spawn upgrader.
       this.spawnCreepOfType(Role.UPGRADER)
-    } else if (builders.length < 4) {
+    } else if (builders.length < requiredBuilders) {
       // Fourth priority, spawn builders.
       this.spawnCreepOfType(Role.BUILDER)
     } else if (guards.length < 1) {
       // Fifth priority, spawn guard.
       this.spawnCreepOfType(Role.GUARD);
+    } else {
+      // Sixth priority, spawn a claimer.
     }
   }
 
@@ -78,25 +83,40 @@ export class Executive {
    * | TOUGH          |    10|
    * | CLAIM          |   600|
    * |=======================|
+   *
+   * From: http://docs.screeps.com/api/#StructureExtension
+   * |======================================================|
+   * | Ctl Lvl. | Ext Cnt. | Capacity/Ext. | Total Capacity |
+   * |======================================================|
+   * |        1 |        - |             - |            300 |
+   * |        2 |        5 |            50 |            550 |
+   * |        3 |       10 |            50 |            800 |
+   * |        4 |       20 |            50 |           1300 |
+   * |        5 |       30 |            50 |           1800 |
+   * |        6 |       40 |            50 |           2300 |
+   * |        7 |       50 |           100 |           5300 |
+   * |        8 |       60 |           200 |          12300 |
+   * |======================================================|
    */
   private bodyFor(role: Role): BodyPartConstant[] {
+    if (role == Role.GUARD) {
+      return [ATTACK, ATTACK, MOVE]; // 210 Energy
+    }
     // TODO: Make this vary based upon the actually available resources.
     if (this.room.energyAvailable <= 300) {
       // If we don't have the energy available, then we need to resort to making cheaper creeps.
       switch(role) {
         case Role.DROP_MINER:
           return [WORK, WORK, MOVE]; // 250 Energy
-        case Role.GUARD:
-          return [ATTACK, ATTACK, MOVE];
         default:
-          return [WORK, CARRY, MOVE];
+          return [WORK, CARRY, MOVE]; // 200 Energy
       }
     }
     switch (role) {
       case Role.DROP_MINER:
-        return [WORK, WORK, WORK, WORK, WORK, MOVE];
+        return [WORK, WORK, WORK, WORK, WORK, MOVE]; // 550 Energy
       default:
-        return [WORK, WORK, CARRY, CARRY, MOVE, MOVE]; // 400 Energy
+        return [WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]; // 550 Energy
     }
   }
 
