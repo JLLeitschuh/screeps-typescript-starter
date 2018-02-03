@@ -40,6 +40,32 @@ export class RoomElements {
   }
 
   /**
+   * Get the energy container for the given source.
+   */
+  public containerFor(source: Source) : StructureContainer | null {
+    const containers = _.filter(this.energyDepositContainers, container => {
+      return RoomElements.isAjdacent(container.pos, source.pos);
+    });
+    if (containers.length) {
+      if (containers.length > 1) {
+        console.log(`WARNING: Multiple adjacent containers for source ${source}`);
+      }
+      return containers[0];
+    }
+    // We haven't found one. Which is fine.
+    return null;
+  }
+
+  private static isAjdacent(first: RoomPosition, second: RoomPosition) : boolean {
+    if (first.roomName != second.roomName) {
+      return false;
+    }
+    const dx = Math.abs(first.x - second.x),
+      dy = Math.abs(first.y - second.y);
+    return (dx + dy === 1);
+  }
+
+  /**
    * Calculates the room positions that are adjacent to a given room position.
    * @param {RoomPosition} roomPosition The room position to compute accents to.
    * @returns {RoomPosition[]} A list of room positions that are adjacent to this room position.
@@ -63,6 +89,7 @@ export class RoomElements {
   private static elements: { [key: string]: RoomElements } = {};
 
   public static from(room: Room) {
+    // TODO: Fix my code so I don't do this any longer.
     if (RoomElements.elements[room.name]) {
       return RoomElements.elements[room.name];
     } else {
@@ -70,5 +97,9 @@ export class RoomElements {
       RoomElements.elements[room.name] = element;
       return element;
     }
+  }
+
+  public static clear() {
+    this.elements = {};
   }
 }

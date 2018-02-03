@@ -4,6 +4,7 @@
 import {RoomElements} from "./room.elements";
 import {Role} from "./role";
 import {CreepSupport} from "./creep.support";
+import {CreepBuilder} from "./creep.builder";
 
 export class Executive {
   private room: Room;
@@ -17,34 +18,55 @@ export class Executive {
   public spawnQueue() {
 
     const harvesters = CreepSupport.creepsByRole(Role.HARVESTER);
+    // console.log(`Count Harvesters: ${harvesters.length}`);
 
     const upgraders = CreepSupport.creepsByRole(Role.UPGRADER);
+    // console.log(`Count Upgraders: ${upgraders.length}`);
 
     const builders = CreepSupport.creepsByRole(Role.BUILDER);
+    // console.log(`Count Builders: ${builders.length}`);
 
     const guards = CreepSupport.creepsByRole(Role.GUARD);
+    // console.log(`Count Guards: ${guards.length}`);
 
     const dropMiners = CreepSupport.creepsByRole(Role.DROP_MINER);
+    // console.log(`Count Drop Miner: ${dropMiners.length}`);
+
+    const hostileCreeps = this.room.find(FIND_HOSTILE_CREEPS);
+
+    const dropMinerPlusHarvesterCount = dropMiners.length + harvesters.length;
 
     const constructionSiteCount = this.elements.constructionSites.length;
-    const requiredBuilders = Math.ceil(constructionSiteCount / 2);
 
-    if (dropMiners.length < this.elements.sources.length) {
-      // First priority, spawn dropminers
-      this.spawnCreepOfType(Role.DROP_MINER);
+    const requiredBuilders = Math.min(Math.floor(constructionSiteCount / 2) + 1, 3);
+    if (hostileCreeps.length > guards.length) {
+      // Just make sure that there are equal number of guards as attackers.
+      this.spawnCreepOfType(Role.GUARD);
+    } else if (dropMinerPlusHarvesterCount == 0) {
+      this.spawnCreepOfType(Role.HARVESTER);
+    } else if (dropMiners.length < this.elements.sources.length) {
+      // First priority, spawn dropminers, unless there aren't enough harvesters.
+      if (dropMiners.length > harvesters.length) {
+        // If we have fewer harvesters than drop miners. Spawn a harvester.
+        this.spawnCreepOfType(Role.HARVESTER);
+      } else {
+        // We have enough harvesters, spawn a drop miner.
+        this.spawnCreepOfType(Role.DROP_MINER);
+      }
     } else if (harvesters.length < 3) {
       // Second priority, spawn haulers,
       this.spawnCreepOfType(Role.HARVESTER)
-    } else if (upgraders.length < 3) {
+    } else if (upgraders.length < 5) {
       // Third priority, spawn upgrader.
       this.spawnCreepOfType(Role.UPGRADER)
     } else if (builders.length < requiredBuilders) {
       // Fourth priority, spawn builders.
       this.spawnCreepOfType(Role.BUILDER)
-    } else if (guards.length < 1) {
+    } else if (hostileCreeps.length > (guards.length - 1)) {
       // Fifth priority, spawn guard.
       this.spawnCreepOfType(Role.GUARD);
     } else {
+      // console.log("Not spawning anything")
       // Sixth priority, spawn a claimer.
     }
   }
@@ -53,13 +75,17 @@ export class Executive {
     for (const spawn of this.elements.spawns) {
       if (spawn.spawning) {
         // Don't spawn another creep while one is being spawned.
+        // console.log("Spawning currently, not  able to spawn anything.");
         continue;
       }
       const capitalizedRole = Executive.capitalizeFirstLetter(role);
       const newName = capitalizedRole + String(Game.time);
       console.log('Spawning new ' + role + ': ' + newName);
-      spawn.spawnCreep(this.bodyFor(role), newName,
+      const spawnCode = spawn.spawnCreep(this.bodyFor(role), newName,
         {memory: {role: role}});
+      if (spawnCode != OK) {
+        console.log(`Can not spawn due to code: ${spawnCode}`)
+      }
       // Only spawn once per room!
       return;
     }
@@ -99,25 +125,29 @@ export class Executive {
    * |======================================================|
    */
   private bodyFor(role: Role): BodyPartConstant[] {
-    if (role == Role.GUARD) {
-      return [ATTACK, ATTACK, MOVE]; // 210 Energy
-    }
-    // TODO: Make this vary based upon the actually available resources.
-    if (this.room.energyAvailable <= 300) {
-      // If we don't have the energy available, then we need to resort to making cheaper creeps.
-      switch(role) {
-        case Role.DROP_MINER:
-          return [WORK, WORK, MOVE]; // 250 Energy
-        default:
-          return [WORK, CARRY, MOVE]; // 200 Energy
-      }
-    }
-    switch (role) {
-      case Role.DROP_MINER:
-        return [WORK, WORK, WORK, WORK, WORK, MOVE]; // 550 Energy
-      default:
-        return [WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]; // 550 Energy
-    }
+    // // TODO: Make this vary based upon the actually available resources.
+    // const roomEnergyAvailable = this.room.energyAvailable;
+    // if (roomEnergyAvailable >= 550) {
+    //   switch (role) {
+    //     case Role.DROP_MINER:
+    //       return [WORK, WORK, WORK, WORK, WORK, MOVE]; // 550 Energy
+    //     case Role.GUARD:
+    //       return [TOUGH, TOUGH, TOUGH, TOUGH, ATTACK, ATTACK, ATTACK, MOVE, MOVE];
+    //     default:
+    //       return [WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]; // 550 Energy
+    //   }
+    // }
+    // // If we don't have the energy available, then we need to resort to making cheaper creeps.
+    // switch (role) {
+    //   case Role.DROP_MINER:
+    //     return [WORK, WORK, MOVE]; // 250 Energy
+    //   case Role.GUARD:
+    //     return [TOUGH, ATTACK, ATTACK, MOVE]; // 220 Energy
+    //   default:
+    //     return [WORK, CARRY, MOVE]; // 200 Energy
+    // }
+    // TODO: Optimize this so that creeps by role is cached.
+    return CreepBuilder.create(role, this.room, CreepSupport.creepsByRole(role).length);
   }
 
   /**

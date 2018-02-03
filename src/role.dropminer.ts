@@ -1,9 +1,11 @@
+import {RoomElements} from "./room.elements";
+
 export class RoleDropminer {
 
-  public static determineSourceId(creep: Creep) : string | null {
+  public static determineSourceId(creep: Creep): string | null {
     // Determine what source to mine at.
     const creeps = extractValues(Game.creeps);
-    const assignedSourceIds : string[] = _(creeps)
+    const assignedSourceIds: string[] = _(creeps)
       .map(creep => creep.memory.assignedSourceId)
       .filter(sourceId => sourceId != null)
       .filter(sourceId => sourceId != undefined)
@@ -34,12 +36,18 @@ export class RoleDropminer {
       }
     }
     // Go to the assigned source and mine there.
-    const assignedSourceId : string = creep.memory.assignedSourceId;
+    const assignedSourceId: string = creep.memory.assignedSourceId;
 
     const harvestingSource: Source = findSourceAtRoomPosition(assignedSourceId);
-    // console.log(`${creep.name} is harvesting Source: ${harvestingSource.pos}, Assigned Source: ${assignedSourceId}`);
+
     if (creep.harvest(harvestingSource) == ERR_NOT_IN_RANGE) {
-      creep.moveTo(harvestingSource, {visualizePathStyle: {stroke: '#ffaa00'}})
+      // Try to find the attached container, if that's not possible, then just move to the source.
+      const harvestingContainer = RoomElements.from(creep.room).containerFor(harvestingSource);
+      if (harvestingContainer) {
+        creep.moveTo(harvestingContainer, {visualizePathStyle: {stroke: '#ffaa00'}});
+      } else {
+        creep.moveTo(harvestingSource, {visualizePathStyle: {stroke: '#ffaa00'}});
+      }
     }
   }
 }
@@ -52,7 +60,7 @@ function findSourceNotWithId(sourceIds: string[]): Source[] {
   return _.flatten(
     extractValues(Game.rooms)
       .map(room => room
-        .find(FIND_SOURCES, source => !_.contains(sourceIds, source.id))));
+        .find(FIND_SOURCES, {filter: source => !_.contains(sourceIds, source.id)})));
 }
 
 function extractValues<T>(map: { [key: string]: T }): T[] {
