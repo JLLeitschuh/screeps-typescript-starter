@@ -1,5 +1,6 @@
 import {Role} from "./role";
 import {RoomElements} from "./room.elements";
+import {Traveler} from "./vendor/travelers/Traveler";
 
 export class CreepSupport {
   public static collectEnergy(creep: Creep) {
@@ -12,12 +13,12 @@ export class CreepSupport {
         energy => creep.pos.getRangeTo(energy));
     if (energyPiles.length!) {
       // Backup search if there isn't any dropped energy that will fill the capacity of the creep.
-      energyPiles = _.sortBy(allEnergy, 'ammount');
+      energyPiles = _.sortBy(allEnergy, 'amount');
     }
 
     if (energyPiles.length) {
       if (creep.pickup(energyPiles[0]) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(energyPiles[0], {visualizePathStyle: {stroke: '#ffaa00'}});
+        CreepSupport.moveCreep(creep, energyPiles[0]);
       }
     } else {
       // Figure out if all the drop miners are missing.
@@ -33,7 +34,7 @@ export class CreepSupport {
         if (containers.length) {
           const container = containers[0];
           if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(container, {visualizePathStyle: {stroke: '#ffaa00'}});
+            CreepSupport.moveCreep(creep, container);
           }
         }
       } else {
@@ -41,7 +42,7 @@ export class CreepSupport {
         const sourcesSorted = _.sortBy(elements.sources, source => creep.pos.getRangeTo(source));
         const closestSource = sourcesSorted[0];
         if (creep.harvest(closestSource) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(closestSource, {visualizePathStyle: {stroke: '#ffaa00'}});
+          CreepSupport.moveCreep(creep, closestSource);
         }
       }
     }
@@ -83,5 +84,9 @@ export class CreepSupport {
       default :
         return 'working';
     }
+  }
+
+  public static moveCreep(creep: Creep, destination: RoomPosition | { pos: RoomPosition }): number {
+    return Traveler.travelTo(creep, destination);
   }
 }

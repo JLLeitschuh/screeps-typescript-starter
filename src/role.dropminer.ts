@@ -1,4 +1,5 @@
 import {RoomElements} from "./room.elements";
+import {CreepSupport} from "./creep.support";
 
 export class RoleDropminer {
 
@@ -44,9 +45,9 @@ export class RoleDropminer {
       // Try to find the attached container, if that's not possible, then just move to the source.
       const harvestingContainer = RoomElements.from(creep.room).containerFor(harvestingSource);
       if (harvestingContainer) {
-        creep.moveTo(harvestingContainer, {visualizePathStyle: {stroke: '#ffaa00'}});
+        CreepSupport.moveCreep(creep, harvestingContainer);
       } else {
-        creep.moveTo(harvestingSource, {visualizePathStyle: {stroke: '#ffaa00'}});
+        CreepSupport.moveCreep(creep, harvestingSource);
       }
     }
   }

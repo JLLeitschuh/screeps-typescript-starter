@@ -11,7 +11,7 @@ export class RoleBuilder {
       if (targets.length) {
         const targetsSorted = _.sortBy(targets, target => creep.pos.getRangeTo(target));
         if (creep.build(targetsSorted[0]) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(targetsSorted[0], {visualizePathStyle: {stroke: '#ffffff'}});
+          CreepSupport.moveCreep(creep, targetsSorted[0]);
         }
       } else {
         const structures = creep.room.find(FIND_STRUCTURES, {
@@ -34,7 +34,7 @@ export class RoleBuilder {
           if (structureSorted.length) {
             const wallToFix = structureSorted[0];
             if (creep.repair(wallToFix) == ERR_NOT_IN_RANGE) {
-              creep.moveTo(wallToFix, {visualizePathStyle: {stroke: '#ffffff'}});
+              CreepSupport.moveCreep(creep, wallToFix);
             }
           }
         }

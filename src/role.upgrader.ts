@@ -10,7 +10,7 @@ export class RoleUpgrader {
         return
       }
       if (creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
-        creep.moveTo(controller, {visualizePathStyle: {stroke: '#ffffff'}});
+        CreepSupport.moveCreep(creep, controller);
       }
     } else {
       CreepSupport.collectEnergy(creep);

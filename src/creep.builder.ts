@@ -22,11 +22,12 @@ export class CreepBuilder {
         return [WORK, WORK, CARRY, MOVE];
       case Role.GUARD:
         return [RANGED_ATTACK, MOVE];
+      case Role.CLAIMER:
+        return [CLAIM, MOVE];
     }
   }
 
   private static typeStarts = <PartList>{
-    // 'claimer': [CLAIM, MOVE],
     // 'hold': [CLAIM, CLAIM, MOVE, MOVE],
     // 'mover': [CARRY, MOVE],
     // 'bunkerMover': [MOVE, CARRY],
@@ -47,11 +48,12 @@ export class CreepBuilder {
         return [WORK, MOVE];
       case Role.GUARD:
         return [RANGED_ATTACK, MOVE];
+      case Role.CLAIMER:
+        return [MOVE];
     }
   }
 
   private static typeExtends = <PartList>{
-    // 'claimer': [MOVE],
     // 'hold': [],
     // 'mover': [CARRY, MOVE],
     // 'bunkerMover': [CARRY],
@@ -75,11 +77,12 @@ export class CreepBuilder {
         return 12;
       case Role.GUARD:
         return 20;
+      case Role.CLAIMER:
+        return 5;
     }
   }
 
   private static typeLength = <{ [name: string]: number }>{
-    'claimer': 5,
     'hold': 4,
     'bunkerMover': 17,
     'ranger': 35,

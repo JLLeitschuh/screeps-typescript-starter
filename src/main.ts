@@ -6,6 +6,7 @@ import {RoleDropminer} from "./role.dropminer";
 import {Executive} from "./executive";
 import {Role} from "./role";
 import {RoomElements} from "./room.elements";
+import {CreepSupport} from "./creep.support";
 
 declare global {
   interface CreepMemory {
@@ -74,14 +75,14 @@ export const loop = ErrorMapper.wrapLoop(() => {
       const hostileCreeps = baseRoom.find(FIND_HOSTILE_CREEPS);
       if (hostileCreeps.length > 0) {
         const targetsSorted = _.sortBy(hostileCreeps, target => creep.pos.getRangeTo(target));
-        if (creep.attack(targetsSorted[0]) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(targetsSorted[0]);
+        if (creep.rangedAttack(targetsSorted[0]) == ERR_NOT_IN_RANGE) {
+          CreepSupport.moveCreep(creep, targetsSorted[0]);
         }
       } else {
         // Get out of the way for more mining.
         let position = baseRoom.getPositionAt(7, 19);
         if (position != null) {
-          creep.moveTo(position);
+          CreepSupport.moveCreep(creep, position);
         }
       }
     }

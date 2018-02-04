@@ -125,27 +125,6 @@ export class Executive {
    * |======================================================|
    */
   private bodyFor(role: Role): BodyPartConstant[] {
-    // // TODO: Make this vary based upon the actually available resources.
-    // const roomEnergyAvailable = this.room.energyAvailable;
-    // if (roomEnergyAvailable >= 550) {
-    //   switch (role) {
-    //     case Role.DROP_MINER:
-    //       return [WORK, WORK, WORK, WORK, WORK, MOVE]; // 550 Energy
-    //     case Role.GUARD:
-    //       return [TOUGH, TOUGH, TOUGH, TOUGH, ATTACK, ATTACK, ATTACK, MOVE, MOVE];
-    //     default:
-    //       return [WORK, WORK, CARRY, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE]; // 550 Energy
-    //   }
-    // }
-    // // If we don't have the energy available, then we need to resort to making cheaper creeps.
-    // switch (role) {
-    //   case Role.DROP_MINER:
-    //     return [WORK, WORK, MOVE]; // 250 Energy
-    //   case Role.GUARD:
-    //     return [TOUGH, ATTACK, ATTACK, MOVE]; // 220 Energy
-    //   default:
-    //     return [WORK, CARRY, MOVE]; // 200 Energy
-    // }
     // TODO: Optimize this so that creeps by role is cached.
     return CreepBuilder.create(role, this.room, CreepSupport.creepsByRole(role).length);
   }

@@ -15,7 +15,7 @@ export class RoleHarvester {
       if(targets.length > 0) {
         const targetsSorted = _.sortBy(targets, target => creep.pos.getRangeTo(target));
         if(creep.transfer(targetsSorted[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-          creep.moveTo(targetsSorted[0], {visualizePathStyle: {stroke: '#ffffff'}});
+          CreepSupport.moveCreep(creep, targetsSorted[0]);
         }
       }
     } else {
